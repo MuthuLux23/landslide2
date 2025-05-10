@@ -1,0 +1,52 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+import xgboost as xgb
+from xgboost import XGBRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+
+# step: 1. Load the datasets
+df_1 = pd.read_csv(r'/content/archive (7).zip')#landslide-dataset
+df_2= pd.read_csv(r'/content/archive (3).zip')#landslide-data
+df_3 = pd.read_csv(r'/content/archive (4).zip')#global landslide catalog dataset
+
+# step: 2. Data Preprocessing: Fill missing values with the column mean
+# Fill missing values only in numeric columns with the column mean
+df_1.fillna(df_1.select_dtypes(include='number').mean(), inplace=True)
+df_2.fillna(df_2.select_dtypes(include='number').mean(), inplace=True)
+df_3.fillna(df_3.select_dtypes(include='number').mean(), inplace=True)
+
+# step: 3  Encode any categorical variables
+categorical_cols = df_1.select_dtypes(include='object').columns
+df = pd.get_dummies(df_1, columns=categorical_cols)
+
+# step:4  Split features and labels
+X = df.drop(columns=['Earthquake_Activity'])  # Replace with your actual target column
+y = df['Earthquake_Activity']
+
+# Step 5: Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# step: 6. Train Random Forest model
+from sklearn.ensemble import RandomForestRegressor
+
+rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+rf_model.fit(X_train, y_train)
+
+# 7. Make predictions and evaluate Random Forest
+rf_predictions = rf_model.predict(X_test)
+
+# Use regression metrics for evaluation, such as mean squared error (MSE) or R-squared
+from sklearn.metrics import mean_squared_error, r2_score
+
+print("Random Forest Mean Squared Error:", mean_squared_error(y_test, rf_predictions))
+print("Random Forest R-squared:", r2_score(y_test, rf_predictions))
+
+# 8. Train XGBoost model
+xgb_model = xgb.XGBRFRegressor(n_estimators=100, random_state=42)
+xgb_model.fit(X_train, y_train)
+
+# 9. Make predictions and evaluate XGBoost
+xgb_predictions = xgb_model.predict(X_test)
+print("XGBoost Accuracy:", mean_squared_error(y_test, xgb_predictions))
+print("XGBoost Classification Report:\n",r2_score(y_test, xgb_predictions))
